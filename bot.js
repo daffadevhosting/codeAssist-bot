@@ -11,8 +11,8 @@ const server = http.createServer((req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`✅ Server mini berjalan di port ${PORT} untuk health check.`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`✅ Server mini berjalan di port ${PORT}, siap menerima health check.`);
 });
 // ===============================================
 
