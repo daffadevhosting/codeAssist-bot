@@ -1,7 +1,20 @@
-// bot.js
 require('dotenv').config();
 const { Client, GatewayIntentBits, Events } = require('discord.js');
 const axios = require('axios');
+const http = require('http'); // 1. Impor modul http bawaan Node.js
+
+// === BAGIAN BARU UNTUK MEMBUAT SERVER WEB MINI ===
+// Ini penting agar Railways tidak mematikan bot
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('Bot is alive!');
+});
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`✅ Server mini berjalan di port ${PORT} untuk health check.`);
+});
+// ===============================================
 
 const API_URL = `${process.env.API_URL}/api/generate`;
 const GEMINI_API_KEY = process.env.BOT_API_KEY_SERVER;
@@ -19,45 +32,38 @@ const client = new Client({
 // Saat bot siap
 client.once(Events.ClientReady, c => {
   console.log(`✅ Bot online sebagai ${c.user.tag}`);
-  console.log(`🚀 API URL diatur ke: ${API_URL}`); // Cek apakah URL benar
 });
 
 // Event: Pesan baru
 client.on(Events.MessageCreate, async message => {
   if (message.author.bot) return;
 
-  // --- MATA-MATA #1 ---
-  // Cek apakah bot membaca semua pesan
+  // Log untuk debugging
   console.log(`[Pesan Diterima] dari ${message.author.tag}: "${message.content}"`);
 
+  // Ubah !generate menjadi /generate atau prefix lain jika Anda mau
   if (!message.content.startsWith('!generate')) return;
 
-  // --- MATA-MATA #2 ---
-  console.log("✅ Perintah '!generate' terdeteksi. Memulai proses...");
+  console.log("✅ Perintah '!generate' terdeteksi.");
 
-  let thinkingMessage; // Definisikan di luar try-catch
-
+  let thinkingMessage;
   try {
     thinkingMessage = await message.reply('🤖 Menganalisis permintaan Anda...');
-    
-    // --- MATA-MATA #3 ---
-    console.log("✅ Pesan 'Menganalisis' berhasil dikirim. Menghubungi Vercel...");
+    console.log("✅ Pesan 'Menganalisis' berhasil dikirim.");
     
     const userPrompt = message.content.slice('!generate'.length).trim();
     const response = await axios.post(API_URL, {
-      messages: [{ role: 'user', content: userPrompt }], // Pastikan mengirim 'messages' array
-      template: 'react', // Ganti sesuai kebutuhan
+      messages: [{ role: 'user', content: userPrompt }],
+      template: 'react',
       model: 'gemini-1.5-flash',
       apiKey: GEMINI_API_KEY
     });
-    
-    // --- MATA-MATA #4 ---
-    console.log("✅ Respons dari Vercel diterima:", response.data);
+
+    console.log("✅ Respons dari Vercel diterima.");
 
     const { code, reasoning } = response.data;
 
     if (code) {
-      // Pastikan pesan tidak terlalu panjang untuk Discord (batas 2000 karakter)
       const fullResponse = `\`\`\`jsx\n${code}\n\`\`\`\n**Reasoning:**\n${reasoning}`;
       if (fullResponse.length > 2000) {
         await thinkingMessage.edit('Kode yang dihasilkan terlalu panjang untuk ditampilkan di Discord.');
@@ -69,7 +75,6 @@ client.on(Events.MessageCreate, async message => {
     }
 
   } catch (error) {
-    // --- MATA-MATA #5 (PALING PENTING) ---
     console.error("❌ TERJADI ERROR:", error.message);
     if (error.response) {
       console.error("-> Data Error dari Server:", error.response.data);
@@ -78,7 +83,6 @@ client.on(Events.MessageCreate, async message => {
     if (thinkingMessage) {
         await thinkingMessage.edit('❌ Terjadi kesalahan fatal. Silakan cek log server.');
     } else {
-        // Jika bahkan pesan 'thinking' gagal, kirim pesan baru
         await message.reply('❌ Terjadi kesalahan fatal sebelum bisa merespons.');
     }
   }
