@@ -32,7 +32,7 @@ client.on(Events.MessageCreate, async message => {
     const response = await axios.post(API_URL, {
       prompt: userPrompt,
       template: 'react',
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       apiKey: GEMINI_API_KEY
     });
 
@@ -52,4 +52,3 @@ client.on(Events.MessageCreate, async message => {
 
 // Start bot
 client.login(DISCORD_TOKEN);
-
